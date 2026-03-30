@@ -1,0 +1,27 @@
+Data flow diagram.
+
+Client
+  |
+  v
+API Gateway
+  |
+  +------------------------------+
+  |                              |
+  v                              v
+Document Service            Search Service
+
+(INDEXING FLOW)              (SEARCH FLOW)
+1. Validate tenant context   1. Validate tenant context
+2. Store in MySQL            2. Check Redis Cache
+   (source of truth)            |
+3. Index into Elasticsearch     |-- Cache HIT --> Return results to user
+4. Invalidate Redis cache       |-- Cache MISS ->
+                                 Query Elasticsearch
+                                 (tenant_id filter)
+                                 Store result in Redis
+                                 Return results to user
+
+Deletes:
+- Remove tenant-scoped records from MySQL
+- Delete corresponding documents from Elasticsearch
+- Invalidate cached search data for the tenant in Redis

@@ -1,0 +1,58 @@
+System Architecture Diagram
+
+Clients
+(Web / Mobile / API users)
+        |
+        v
++-----------------------+
+|      API Gateway      |
+|-----------------------|
+| - Tenant validation   |
+| - Rate limiting       |
+| - Routing             |
++-----------------------+
+        |
+        v
+ +-------------------+        +--------------------+
+ |  Search Service   |        | Document Service   |
+ |-------------------|        |--------------------|
+| - Tenant-aware    |        | - Tenant-aware CRUD|
+|   search          |        | - Write to MySQL   |
+| - Query parsing   |        | - Index Elasticsearch|
+| - Cache lookup    |        | - Invalidate Redis |
+ +-------------------+        +--------------------+
+        |                               |
+        v                               v
++--------------------+          +--------------------+
+|      Redis Cache   |          |       MySQL        |
+|--------------------|          |--------------------|
+| - Query cache      |          | - Source of truth  |
+| - Tenant keys      |          | - Stores documents |
++--------------------+          | - Tenant partition |
+        |                       +--------------------+
+        v
++--------------------+
+|   Elasticsearch    |
+|--------------------|
+| - Full-text search |
+| - BM25 ranking     |
+| - Tenant filter    |
++--------------------+
+
+This prototype uses:
+- Express API
+- MySQL as the system of record
+- Elasticsearch as the search engine
+- Redis as the search cache
+- In-memory tenant rate limiting
+- Direct synchronous indexing from the API into Elasticsearch
+
+The domain is recruiter-style job postings with fields such as:
+- name
+- employmentType
+- isRemote
+- details
+- minSalary
+- maxSalary
+- location
+- companyName
